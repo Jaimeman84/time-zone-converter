@@ -13,24 +13,36 @@ A simple time zone converter app that shows the current time across 5 major time
 - Color-coded time cards for easy time difference visualization
 - Simple and clean user interface
 
-## Requirements
+## Setup Instructions
 
-- Python 3.8+
-- pip
+1. Clone the repository:
+```bash
+git clone https://github.com/jaimeman84/time-zone-converter.git
+cd timezone-converter
+```
 
-## Quick Start
+2. Create and activate virtual environment:
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
-1. Install dependencies:
+# macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies:
 ```bash
 pip install streamlit pytz pytest
 ```
 
-2. Run the app:
+4. Run the app:
 ```bash
 streamlit run app.py
 ```
 
-3. Open `http://localhost:8501` in your browser
+5. Open `http://localhost:8501` in your browser
 
 ## Project Structure
 
@@ -52,6 +64,13 @@ pytest test_app.py -v
 - 🟢 Green: Similar time zone (±3 hours)
 - 🟡 Orange: Moderate difference (±4-6 hours)
 - 🔴 Red: Large time difference (>6 hours)
+
+## Troubleshooting
+
+If you encounter any issues:
+1. Make sure your virtual environment is activated
+2. Verify all dependencies are installed correctly
+3. Check if you're using Python 3.8 or higher
 
 ## License
 

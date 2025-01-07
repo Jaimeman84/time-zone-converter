@@ -1,18 +1,17 @@
 # app.py
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
-from timezone_utils import get_top5_timezone_times
-import time
+from timezone_utils import get_top5_timezone_times, get_current_est_time
 
 def get_card_color(time_diff):
     """Return background color based on time difference."""
     if abs(time_diff) <= 3:
-        return "#4CAF50"  # Green for similar times
+        return "#4CAF50"
     elif abs(time_diff) <= 6:
-        return "#FFA726"  # Orange for moderate difference
+        return "#FFA726"
     else:
-        return "#EF5350"  # Red for large difference
+        return "#EF5350"
 
 def format_time_diff(diff):
     """Format time difference for display."""
@@ -23,28 +22,24 @@ def format_time_diff(diff):
     else:
         return f"{diff:.0f}h behind"
 
-def format_12hour_time(dt):
-    """Convert datetime to 12-hour format with AM/PM."""
-    return dt.strftime('%I:%M:%S %p')
-
 def main():
     st.set_page_config(
-        page_title="Top 5 Time Zones",
+        page_title="Time Zone Converter",
         page_icon="🕒",
-        layout="wide"
+        layout="centered"
     )
     
-    # Custom CSS for cards and centered layout
+    # Custom CSS for styling
     st.markdown("""
         <style>
-        .stApp {
-            text-align: center;
+        .main > div {
+            max-width: 50%;
         }
         .time-card {
             padding: 20px;
             border-radius: 15px;
             color: white;
-            margin: 10px auto;
+            margin: 10px 0;
             text-align: center;
         }
         .time-display {
@@ -60,62 +55,76 @@ def main():
             font-size: 16px;
             opacity: 0.9;
         }
-        .css-1629p8f h1 {  /* Center title */
+        div[data-testid="stMarkdownContainer"] {
             text-align: center;
-        }
-        .css-1629p8f h3 {  /* Center headings */
-            text-align: center;
-        }
-        .css-1629p8f p {   /* Center paragraphs */
-            text-align: center;
-        }
-        /* Center date and time inputs */
-        .css-1x8cf1d {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .stButton {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("🌍 Major Time Zones Converter")
-    st.write("View current time across major global cities based on EST")
+    st.markdown("# 🌍 Time Zone Converter")
+    st.markdown("### Convert EST time to major global cities")
 
-    # Center the input controls using columns
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Get current EST time
+    current_est = get_current_est_time()
+    
+    # Custom time inputs
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        hours = st.number_input(
+            "Hour (24h format)",
+            min_value=0,
+            max_value=23,
+            value=current_est.hour
+        )
     
     with col2:
-        source_date = st.date_input("Select date")
-        source_time = st.time_input("Select time")
-        source_datetime = datetime.combine(source_date, source_time)
+        minutes = st.number_input(
+            "Minutes",
+            min_value=0,
+            max_value=59,
+            value=current_est.minute
+        )
 
-    if st.button("Show Times", type="primary"):
+    # Date selection
+    source_date = st.date_input(
+        "Select date",
+        value=current_est.date(),
+        min_value=current_est.date()
+    )
+
+    # Combine inputs into datetime
+    source_datetime = datetime.combine(
+        source_date, 
+        datetime.strptime(f"{hours:02d}:{minutes:02d}", "%H:%M").time()
+    )
+    est_tz = pytz.timezone('America/New_York')
+    source_datetime = est_tz.localize(source_datetime)
+
+    # Display selected time
+    st.markdown(f"### Selected Time (EST): {source_datetime.strftime('%Y-%m-%d %H:%M')}")
+
+    if st.button("Show Times", type="primary", use_container_width=True):
         timezone_info, error = get_top5_timezone_times(source_datetime)
         
         if error:
             st.error(f"Error occurred: {error}")
         else:
-            # Create three columns for cards
-            cols = st.columns(3)
+            # Create two columns for cards
+            cols = st.columns(2)
             
             # Display timezone cards
             for idx, tz_info in enumerate(timezone_info):
-                col_idx = idx % 3
+                col_idx = idx % 2
                 
                 with cols[col_idx]:
-                    # Card container
                     bg_color = get_card_color(tz_info['time_diff'])
                     
                     st.markdown(f"""
                         <div class="time-card" style="background-color: {bg_color}">
                             <div class="city-name">{tz_info['city']}</div>
                             <div class="time-display">
-                                {format_12hour_time(tz_info['local_time'])}
+                                {tz_info['local_time'].strftime('%H:%M')}
                             </div>
                             <div class="time-diff">
                                 {format_time_diff(tz_info['time_diff'])}
@@ -123,12 +132,9 @@ def main():
                         </div>
                     """, unsafe_allow_html=True)
 
-            # Add information about color coding
-            st.markdown("### Color Guide")
+            # Color guide
             st.markdown("""
-                🟢 Green: Similar time zone (±3 hours)
-                🟡 Orange: Moderate difference (±4-6 hours)
-                🔴 Red: Large time difference (>6 hours)
+                🟢 Similar time (±3h) · 🟡 Moderate difference (±6h) · 🔴 Large difference (>6h)
             """)
 
 if __name__ == "__main__":
